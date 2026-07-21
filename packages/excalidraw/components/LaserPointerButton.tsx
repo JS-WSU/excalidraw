@@ -22,8 +22,7 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
   const { container } = useExcalidrawContainer();
   const SIDE_OFFSET = 16;
 
-  // Automatically open the settings popover whenever the laser tool becomes active.
-  // This ensures the UI surfaces even if selected from the "additional tools" dropdown.
+  // Open the popup whenever the tool becomes active (even from a secondary menu)
   useEffect(() => {
     setIsPopupOpen(props.checked);
   }, [props.checked]);
@@ -44,7 +43,7 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
           data-testid="toolbar-LaserPointer"
           onSelect={() => {
             props.onChange?.();
-            // If already checked and clicked again, toggle the menu
+            // Allow user to collapse the menu if they click the active tool again
             if (props.checked) {
               setIsPopupOpen((prev) => !prev);
             }
@@ -54,9 +53,10 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
 
       <Popover.Content
         className="tool-popover-content"
+        side="bottom"
         sideOffset={SIDE_OFFSET}
         collisionBoundary={container ?? undefined}
-        style={{ zIndex: 999999 }} // Ensures it floats above all other canvas/UI elements
+        style={{ zIndex: 999999 }}
       >
         <LaserModeToggle 
           appState={props.appState} 

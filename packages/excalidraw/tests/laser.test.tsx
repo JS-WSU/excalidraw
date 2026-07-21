@@ -4,11 +4,25 @@ import { Excalidraw } from "../index";
 
 describe("Laser Pointer Tool", () => {
   it("should select the laser pointer tool and toggle persistence", async () => {
-    // 1. Render Excalidraw with the laser pointer initialized as the active tool
-    render(<Excalidraw initialData={{ appState: { activeTool: { type: "laser", customType: null } } }} />);
+    // 1. Render Excalidraw with all required activeTool properties
+    render(
+      <Excalidraw 
+        initialData={{ 
+          appState: { 
+            activeTool: { 
+              type: "laser", 
+              customType: null,
+              lastActiveTool: null,
+              locked: false,
+              fromSelection: false
+            } 
+          } 
+        }} 
+      />
+    );
 
-    // 2. Because it is active, the useEffect in our button will automatically open the popover.
-    // We use findByLabelText which asynchronously waits for the element to appear in the DOM.
+    // 2. Because the tool is active, the popup will automatically mount.
+    // Wait for the asynchronous render of the DOM elements.
     const persistenceToggle = await screen.findByLabelText("Toggle Persistent Laser Mode");
     expect(persistenceToggle).toBeInTheDocument();
     
