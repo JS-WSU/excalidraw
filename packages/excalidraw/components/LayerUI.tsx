@@ -368,6 +368,8 @@ const LayerUI = ({
                             }}
                           >
                             <LaserPointerButton
+                              setAppState={setAppState}
+                              appState={appState}
                               title={t("toolBar.laser")}
                               checked={
                                 appState.activeTool.type === TOOL_TYPE.laser
