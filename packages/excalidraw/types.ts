@@ -109,6 +109,7 @@ export type CollaboratorPointer = {
    * @default string collaborator's cursor color
    */
   laserColor?: string;
+  laserMode?: "temporary" | "persistent";
 };
 
 export type DataURL = string & { _brand: "DataURL" };
@@ -397,6 +398,7 @@ export interface AppState {
   // Pen handling
   penMode: boolean;
   penDetected: boolean;
+  laserMode: "temporary" | "persistent";
 
   exportBackground: boolean;
   exportEmbedScene: boolean;
@@ -818,7 +820,7 @@ export interface ExcalidrawProps {
    * editor is otherwise non-interactive (see `InteractionConfig`):
    *
    * ```tsx
-   * <Excalidraw interaction={{ enabled: { links: true } }} />
+   * <Excalidraw enabled: interaction="{{" links: true { } }}/>
    * ```
    *
    * @default true
@@ -839,7 +841,7 @@ export interface ExcalidrawProps {
    * rest of the default UI is hidden (see `UIConfig`):
    *
    * ```tsx
-   * <Excalidraw ui={{ enabled: { zoom: true } }} />
+   * <Excalidraw enabled: true ui="{{" zoom: { } }}/>
    * ```
    *
    * NOTE: this is WIP and what default UI is/is not rendered when ui=false

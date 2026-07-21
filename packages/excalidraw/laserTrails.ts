@@ -16,16 +16,20 @@ export class LaserTrails implements Trail {
 
   constructor(private app: App) {
     this.localTrail = new AnimatedTrail(app, {
-      ...this.getTrailOptions(),
+      ...this.getTrailOptions(() => this.app.state.laserMode === "persistent"),
       fill: () => DEFAULT_LASER_COLOR,
     });
   }
 
-  private getTrailOptions() {
+  private getTrailOptions(isPersistent: () => boolean = () => false) {
     return {
       simplify: 0,
       streamline: 0.4,
       sizeMapping: (c) => {
+        if (isPersistent()) {
+          return 1;
+        }
+
         const DECAY_TIME = 1000;
         const DECAY_LENGTH = 50;
         const t = Math.max(
@@ -95,7 +99,10 @@ export class LaserTrails implements Trail {
       let trail = this.collabTrails.get(key);
       if (!trail) {
         trail = new AnimatedTrail(this.app, {
-          ...this.getTrailOptions(),
+          ...this.getTrailOptions(() => {
+            const currentCollaborator = this.app.state.collaborators.get(key);
+            return currentCollaborator?.pointer?.laserMode === "persistent";
+          }),
           fill: () =>
             collaborator.pointer?.laserColor ||
             getClientColor(key, collaborator),
