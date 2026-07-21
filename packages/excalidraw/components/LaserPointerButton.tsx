@@ -6,15 +6,15 @@ import { IconButton } from "./IconButton";
 import { laserPointerToolIcon } from "./icons";
 import { useExcalidrawContainer } from "./App";
 import { LaserModeToggle } from "./LaserModeToggle";
-import type { AppState } from "../types";
+import type { UIAppState } from "../types";
 
 type LaserPointerButtonProps = {
   title?: string;
   checked: boolean;
   onChange?(): void;
   isMobile?: boolean;
-  appState: AppState;
-  setAppState: (stateUpdate: Partial<AppState>) => void;
+  appState: UIAppState;
+  setAppState: (stateUpdate: any) => void;
 };
 
 export const LaserPointerButton = (props: LaserPointerButtonProps) => {
@@ -45,8 +45,6 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
           data-testid="toolbar-LaserPointer"
           onSelect={() => {
             props.onChange?.();
-            // Only toggle the popup open if the tool is already selected 
-            // or if we are selecting it for the first time
             setIsPopupOpen((prev) => !prev);
           }}
         />

@@ -1,16 +1,15 @@
 import React from "react";
-import type { AppState } from "../types";
+import type { UIAppState } from "../types";
 
 type LaserModeToggleProps = {
-  appState: AppState;
-  setAppState: (stateUpdate: Partial<AppState>) => void;
+  appState: UIAppState;
+  setAppState: (stateUpdate: any) => void;
 };
 
 export const LaserModeToggle = ({
   appState,
   setAppState,
 }: LaserModeToggleProps) => {
-  // Only render the UI toggle if the laser tool is currently selected
   if (appState.activeTool.type !== "laser") {
     return null;
   }

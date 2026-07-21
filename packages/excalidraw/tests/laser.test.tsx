@@ -1,6 +1,7 @@
 import React from "react";
 import { render, fireEvent, screen } from "@testing-library/react";
-import { Excalidraw } from "../components/Excalidraw";
+// Changed import to resolve from the root of the excalidraw package
+import { Excalidraw } from "../index"; 
 
 describe("Laser Pointer Tool", () => {
   it("should select the laser pointer tool and toggle persistence", async () => {
