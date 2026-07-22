@@ -76,12 +76,13 @@ import type { ParsedDataTranferList } from "../clipboard";
 import type App from "../components/App";
 import type { AppState } from "../types";
 
-type Unit = "m" | "cm" | "mm" | "km" | "in" | "ft" | "yd" | "mi" | "";
+type Unit = "m" | "cm" | "mm" | "dm" | "km" | "in" | "ft" | "yd" | "mi" | "";
 
 const CONVERSION_RATES_TO_METERS: Record<Exclude<Unit, "">, number> = {
   m: 1,
   cm: 0.01,
   mm: 0.001,
+  dm: 0.1,
   km: 1000,
   in: 0.0254,
   ft: 0.3048,
@@ -93,7 +94,6 @@ const evaluateMathExpression = (
   expression: string,
   preferredSystem: AppState["calculatorSystem"]
 ): { result: string; alternatives: string[] } | null => {
-  // Regex to match e.g., "12ft + 3m =" or "1+2="
   const mathRegex = /([\d\.]+)\s*([a-zA-Z]*)\s*([-+*/])\s*([\d\.]+)\s*([a-zA-Z]*)\s*=$/;
   const match = expression.match(mathRegex);
 
@@ -109,7 +109,6 @@ const evaluateMathExpression = (
   let baseVal1 = val1;
   let baseVal2 = val2;
 
-  // Convert to meters if units are present
   if (u1 && CONVERSION_RATES_TO_METERS[u1 as Exclude<Unit, "">]) {
     baseVal1 = val1 * CONVERSION_RATES_TO_METERS[u1 as Exclude<Unit, "">];
   }
@@ -121,7 +120,7 @@ const evaluateMathExpression = (
   switch (operator) {
     case "+": baseResult = baseVal1 + baseVal2; break;
     case "-": baseResult = baseVal1 - baseVal2; break;
-    case "*": baseResult = baseVal1 * baseVal2; break; // Note: multiplying units creates square units, simplified here
+    case "*": baseResult = baseVal1 * baseVal2; break;
     case "/": baseResult = baseVal1 / baseVal2; break;
     default: return null;
   }
@@ -131,23 +130,30 @@ const evaluateMathExpression = (
 
   if (u1 || u2) {
     const meters = baseResult;
-    const cm = meters / CONVERSION_RATES_TO_METERS["cm"];
-    const ft = meters / CONVERSION_RATES_TO_METERS["ft"];
     
-    alternatives.push(`${parseFloat(meters.toFixed(2))}m`);
-    alternatives.push(`${parseFloat(cm.toFixed(2))}cm`);
-    alternatives.push(`${parseFloat(ft.toFixed(2))}ft`);
+    // Generate all alternative conversions dynamically
+    Object.keys(CONVERSION_RATES_TO_METERS).forEach((key) => {
+      const unit = key as Exclude<Unit, "">;
+      const rate = CONVERSION_RATES_TO_METERS[unit];
+      const converted = meters / rate;
+      // Allow 4 decimals for larger units, 2 for standard
+      const decimals = (unit === "km" || unit === "mi") ? 4 : 2; 
+      alternatives.push(`${parseFloat(converted.toFixed(decimals))}${unit}`);
+    });
 
     if (preferredSystem === "imperial") {
-      primaryResult = `${parseFloat(ft.toFixed(2))}ft`;
+      primaryResult = `${parseFloat((meters / CONVERSION_RATES_TO_METERS["ft"]).toFixed(2))}ft`;
     } else {
       primaryResult = `${parseFloat(meters.toFixed(2))}m`;
     }
   } else {
-    primaryResult = `${parseFloat(baseResult.toFixed(4))}`; // standard math
+    primaryResult = `${parseFloat(baseResult.toFixed(4))}`; 
   }
 
-  return { result: primaryResult, alternatives: alternatives.filter(a => a !== primaryResult) };
+  return { 
+    result: primaryResult, 
+    alternatives: alternatives.filter(a => a !== primaryResult) 
+  };
 };
 
 const getTransform = (
@@ -759,12 +765,13 @@ editable.oninput = () => {
                 closeSuggestionPopup();
               };
               
-              suggestionPopup.appendChild(btn);
+// FIX: Use optional chaining to satisfy strict null checks
+              suggestionPopup?.appendChild(btn);            
             });
 
             excalidrawContainer
               ?.querySelector(".excalidraw-textEditorContainer")!
-              .appendChild(suggestionPopup);
+              .appendChild(suggestionPopup); // Add non-null assertion here since we just created it
           }
         }
       } else {

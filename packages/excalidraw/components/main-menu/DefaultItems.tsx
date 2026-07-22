@@ -62,6 +62,7 @@ import {
 } from "../icons";
 
 import "./DefaultItems.scss";
+import { AppState, CalculatorSystem } from "../../types";
 
 export const CalculatorSystemToggle = () => {
   const { t } = useI18n();
