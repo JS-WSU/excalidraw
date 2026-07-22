@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { KEYS, normalizeInputColor } from "@excalidraw/common";
 
-import { getShortcutKey } from "../..//shortcut";
+import { getShortcutKey } from "../../shortcut";
 import { useAtom } from "../../editor-jotai";
 import { t } from "../../i18n";
 import { useEditorInterface } from "../App";
@@ -29,22 +29,51 @@ export const ColorInput = ({
 }) => {
   const editorInterface = useEditorInterface();
   const [innerValue, setInnerValue] = useState(color);
+  const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveColorPickerSection] = useAtom(
     activeColorPickerSectionAtom,
   );
 
   useEffect(() => {
     setInnerValue(color);
+    setError(null);
   }, [color]);
 
   const changeColor = useCallback(
     (inputValue: string) => {
       const value = inputValue.toLowerCase();
-      const color = normalizeInputColor(value);
-
-      if (color) {
-        onChange(color);
+      const stripped = value.replace(/^#/, "").trim();
+      
+      let errorMessage: string | null = null;
+      
+      // Perform front-end validation for Hex
+      if (stripped) {
+        if (/[^0-9a-f]/i.test(stripped)) {
+          errorMessage = "Error: Invalid characters in hex code";
+        } else if (![3, 4, 6, 8].includes(stripped.length)) {
+          errorMessage = "Error: Hex code must be 3, 4, 6, or 8 characters (excluding #)";
+        } else {
+          // If length and characters are valid, ensure it parses fully
+          const hexString = `#${stripped}`;
+          const normalizedColor = normalizeInputColor(hexString);
+          if (!normalizedColor) {
+            errorMessage = "Error: Not a valid hex color";
+          }
+        }
       }
+
+      setError(errorMessage);
+
+      // Only propagate the change up if there's no error
+      if (!errorMessage && stripped) {
+        const hexString = `#${stripped}`;
+        const normalizedColor = normalizeInputColor(hexString);
+        if (normalizedColor) {
+          onChange(normalizedColor);
+        }
+      }
+
+      // Update innerValue so typing is unimpeded
       setInnerValue(value);
     },
     [onChange],
@@ -68,66 +97,84 @@ export const ColorInput = ({
   }, [setEyeDropperState]);
 
   return (
-    <div className="color-picker__input-label">
-      <div className="color-picker__input-hash">#</div>
-      <input
-        ref={activeSection === "hex" ? inputRef : undefined}
-        style={{ border: 0, padding: 0 }}
-        spellCheck={false}
-        className="color-picker-input"
-        aria-label={label}
-        onChange={(event) => {
-          changeColor(event.target.value);
-        }}
-        value={(innerValue || "").replace(/^#/, "")}
-        onBlur={() => {
-          setInnerValue(color);
-        }}
-        tabIndex={-1}
-        onFocus={() => setActiveColorPickerSection("hex")}
-        onKeyDown={(event) => {
-          if (event.key === KEYS.TAB) {
-            return;
-          } else if (event.key === KEYS.ESCAPE) {
-            eyeDropperTriggerRef.current?.focus();
-          }
-          event.stopPropagation();
-        }}
-        placeholder={placeholder}
-      />
-      {/* TODO reenable on mobile with a better UX */}
-      {editorInterface.formFactor !== "phone" && (
-        <>
-          <div
-            style={{
-              width: "1px",
-              height: "1.25rem",
-              backgroundColor: "var(--default-border-color)",
-            }}
-          />
-          <div
-            ref={eyeDropperTriggerRef}
-            className={clsx("excalidraw-eye-dropper-trigger", {
-              selected: eyeDropperState,
-            })}
-            onClick={() =>
-              setEyeDropperState((s) =>
-                s
-                  ? null
-                  : {
-                      keepOpenOnAlt: false,
-                      onSelect: (color) => onChange(color),
-                      colorPickerType,
-                    },
-              )
+    <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+      <div className="color-picker__input-label">
+        <div className="color-picker__input-hash">#</div>
+        <input
+          ref={activeSection === "hex" ? inputRef : undefined}
+          style={{ border: 0, padding: 0 }}
+          spellCheck={false}
+          className="color-picker-input"
+          aria-label={label}
+          onChange={(event) => {
+            changeColor(event.target.value);
+          }}
+          value={(innerValue || "").replace(/^#/, "")}
+          onBlur={() => {
+            // Revert invalid entries back to the currently active color
+            setInnerValue(color);
+            setError(null);
+          }}
+          tabIndex={-1}
+          onFocus={() => setActiveColorPickerSection("hex")}
+          onKeyDown={(event) => {
+            if (event.key === KEYS.TAB) {
+              return;
+            } else if (event.key === KEYS.ESCAPE) {
+              eyeDropperTriggerRef.current?.focus();
             }
-            title={`${t(
-              "labels.eyeDropper",
-            )} — ${KEYS.I.toLocaleUpperCase()} or ${getShortcutKey("Alt")} `}
-          >
-            {eyeDropperIcon}
-          </div>
-        </>
+            event.stopPropagation();
+          }}
+          placeholder={placeholder}
+        />
+        {/* TODO reenable on mobile with a better UX */}
+        {editorInterface.formFactor !== "phone" && (
+          <>
+            <div
+              style={{
+                width: "1px",
+                height: "1.25rem",
+                backgroundColor: "var(--default-border-color)",
+              }}
+            />
+            <div
+              ref={eyeDropperTriggerRef}
+              className={clsx("excalidraw-eye-dropper-trigger", {
+                selected: eyeDropperState,
+              })}
+              onClick={() =>
+                setEyeDropperState((s) =>
+                  s
+                    ? null
+                    : {
+                        keepOpenOnAlt: false,
+                        onSelect: (color) => onChange(color),
+                        colorPickerType,
+                      },
+                )
+              }
+              title={`${t(
+                "labels.eyeDropper",
+              )} — ${KEYS.I.toLocaleUpperCase()} or ${getShortcutKey("Alt")} `}
+            >
+              {eyeDropperIcon}
+            </div>
+          </>
+        )}
+      </div>
+      {error && (
+        <div
+          className="color-picker__input-error"
+          style={{
+            color: "var(--color-danger, #e03131)",
+            fontSize: "0.75rem",
+            marginTop: "0.35rem",
+            lineHeight: 1.2,
+            textAlign: "left",
+          }}
+        >
+          {error}
+        </div>
       )}
     </div>
   );
