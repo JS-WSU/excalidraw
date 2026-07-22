@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 
 import { IconButton } from "./IconButton";
 import { laserPointerToolIcon } from "./icons";
 import { LaserModeToggle } from "./LaserModeToggle";
-import { useExcalidrawContainer } from "./App";
 import type { UIAppState } from "../types";
 
 type LaserPointerButtonProps = {
@@ -18,7 +17,12 @@ type LaserPointerButtonProps = {
 };
 
 export const LaserPointerButton = (props: LaserPointerButtonProps) => {
-  const { container } = useExcalidrawContainer();
+  // Track mount state to safely access document.body for the React Portal
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <>
@@ -38,17 +42,17 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
         }}
       />
 
-      {/* Teleport the toggle to the root container to bypass toolbar hidden overflows */}
-      {props.checked && container &&
+      {/* Teleport the toggle directly to the document body to bypass ALL Excalidraw hidden overflows */}
+      {props.checked && mounted && typeof document !== "undefined" &&
         createPortal(
           <div
             style={{
-              position: "absolute",
-              top: "70px", // Pushed below the top toolbar
+              position: "fixed",
+              top: "80px", // Safely positioned below the top toolbar UI
               left: "50%",
               transform: "translateX(-50%)",
-              zIndex: 9999999, // Float above all canvas elements
-              pointerEvents: "none", // Prevent this wrapper wrapper from blocking canvas clicks
+              zIndex: 9999999, // Floating above the entire Excalidraw canvas
+              pointerEvents: "none", // Prevent this wrapper from blocking canvas clicks
             }}
           >
             <div style={{ pointerEvents: "auto" }}>
@@ -58,7 +62,7 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
               />
             </div>
           </div>,
-          container
+          document.body
         )}
     </>
   );

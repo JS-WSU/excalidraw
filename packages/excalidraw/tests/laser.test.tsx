@@ -21,7 +21,7 @@ describe("Laser Pointer Tool", () => {
       />
     );
 
-    // 2. Wait for the asynchronously rendered canvas portal to mount to the container
+    // 2. Wait for the asynchronously rendered document portal to mount
     const persistenceToggle = await screen.findByLabelText("Toggle Persistent Laser Mode");
     expect(persistenceToggle).toBeInTheDocument();
     

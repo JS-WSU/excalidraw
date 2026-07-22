@@ -10,7 +10,8 @@ export const LaserModeToggle = ({
   appState,
   setAppState,
 }: LaserModeToggleProps) => {
-  if (appState.activeTool.type !== "laser") {
+  // Safe-guard to ensure it only renders if the tool state is accurate
+  if (appState.activeTool?.type !== "laser") {
     return null;
   }
 
