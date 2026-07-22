@@ -76,6 +76,80 @@ import type { ParsedDataTranferList } from "../clipboard";
 import type App from "../components/App";
 import type { AppState } from "../types";
 
+type Unit = "m" | "cm" | "mm" | "km" | "in" | "ft" | "yd" | "mi" | "";
+
+const CONVERSION_RATES_TO_METERS: Record<Exclude<Unit, "">, number> = {
+  m: 1,
+  cm: 0.01,
+  mm: 0.001,
+  km: 1000,
+  in: 0.0254,
+  ft: 0.3048,
+  yd: 0.9144,
+  mi: 1609.34,
+};
+
+const evaluateMathExpression = (
+  expression: string,
+  preferredSystem: AppState["calculatorSystem"]
+): { result: string; alternatives: string[] } | null => {
+  // Regex to match e.g., "12ft + 3m =" or "1+2="
+  const mathRegex = /([\d\.]+)\s*([a-zA-Z]*)\s*([-+*/])\s*([\d\.]+)\s*([a-zA-Z]*)\s*=$/;
+  const match = expression.match(mathRegex);
+
+  if (!match) return null;
+
+  const [_, val1Str, unit1, operator, val2Str, unit2] = match;
+  const val1 = parseFloat(val1Str);
+  const val2 = parseFloat(val2Str);
+
+  const u1 = (unit1.toLowerCase() as Unit) || "";
+  const u2 = (unit2.toLowerCase() as Unit) || "";
+
+  let baseVal1 = val1;
+  let baseVal2 = val2;
+
+  // Convert to meters if units are present
+  if (u1 && CONVERSION_RATES_TO_METERS[u1 as Exclude<Unit, "">]) {
+    baseVal1 = val1 * CONVERSION_RATES_TO_METERS[u1 as Exclude<Unit, "">];
+  }
+  if (u2 && CONVERSION_RATES_TO_METERS[u2 as Exclude<Unit, "">]) {
+    baseVal2 = val2 * CONVERSION_RATES_TO_METERS[u2 as Exclude<Unit, "">];
+  }
+
+  let baseResult = 0;
+  switch (operator) {
+    case "+": baseResult = baseVal1 + baseVal2; break;
+    case "-": baseResult = baseVal1 - baseVal2; break;
+    case "*": baseResult = baseVal1 * baseVal2; break; // Note: multiplying units creates square units, simplified here
+    case "/": baseResult = baseVal1 / baseVal2; break;
+    default: return null;
+  }
+
+  const alternatives: string[] = [];
+  let primaryResult = `${baseResult}`;
+
+  if (u1 || u2) {
+    const meters = baseResult;
+    const cm = meters / CONVERSION_RATES_TO_METERS["cm"];
+    const ft = meters / CONVERSION_RATES_TO_METERS["ft"];
+    
+    alternatives.push(`${parseFloat(meters.toFixed(2))}m`);
+    alternatives.push(`${parseFloat(cm.toFixed(2))}cm`);
+    alternatives.push(`${parseFloat(ft.toFixed(2))}ft`);
+
+    if (preferredSystem === "imperial") {
+      primaryResult = `${parseFloat(ft.toFixed(2))}ft`;
+    } else {
+      primaryResult = `${parseFloat(meters.toFixed(2))}m`;
+    }
+  } else {
+    primaryResult = `${parseFloat(baseResult.toFixed(4))}`; // standard math
+  }
+
+  return { result: primaryResult, alternatives: alternatives.filter(a => a !== primaryResult) };
+};
+
 const getTransform = (
   width: number,
   height: number,
@@ -528,6 +602,16 @@ export const textWysiwyg = ({
     };
   })();
 
+  // --- ADD POPUP STATE ---
+  let suggestionPopup: HTMLDivElement | null = null;
+
+  const closeSuggestionPopup = () => {
+    if (suggestionPopup) {
+      suggestionPopup.remove();
+      suggestionPopup = null;
+    }
+  };
+
   if (onChange) {
     editable.onpaste = async (event) => {
       // we need to synchronously get the MIME types so we can preventDefault()
@@ -613,19 +697,83 @@ export const textWysiwyg = ({
       }
     };
 
-    editable.oninput = () => {
+editable.oninput = () => {
       const normalized = normalizeText(editable.value);
       if (editable.value !== normalized) {
         const selectionStart = editable.selectionStart;
         editable.value = normalized;
-        // put the cursor at some position close to where it was before
-        // normalization (otherwise it'll end up at the end of the text)
         editable.selectionStart = selectionStart;
         editable.selectionEnd = selectionStart;
       }
+
+      // --- NEW CALCULATOR LOGIC ---
+      if (editable.value.endsWith("=")) {
+        const lines = editable.value.split("\n");
+        const currentLine = lines[lines.length - 1];
+        
+        const calc = evaluateMathExpression(currentLine, app.state.calculatorSystem || "auto");
+        
+        if (calc) {
+          // Append primary result
+          editable.value = editable.value + " " + calc.result;
+          
+          // Show Alternatives Popup if units exist
+          if (calc.alternatives.length > 0) {
+            closeSuggestionPopup();
+            
+            suggestionPopup = document.createElement("div");
+            Object.assign(suggestionPopup.style, {
+              position: "absolute",
+              top: `${editable.offsetTop + editable.offsetHeight + 5}px`,
+              left: `${editable.offsetLeft}px`,
+              background: "var(--popup-bg-color, #ffffff)",
+              border: "1px solid var(--color-gray-20)",
+              borderRadius: "4px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              zIndex: "var(--zIndex-popup)",
+              display: "flex",
+              flexDirection: "column",
+              padding: "4px",
+              fontFamily: "var(--ui-font)",
+              fontSize: "12px"
+            });
+
+            calc.alternatives.forEach(alt => {
+              const btn = document.createElement("button");
+              btn.textContent = `Use ${alt}`;
+              Object.assign(btn.style, {
+                background: "transparent",
+                border: "none",
+                padding: "4px 8px",
+                cursor: "pointer",
+                textAlign: "left"
+              });
+              
+              btn.onmousedown = (e) => {
+                e.preventDefault(); // keep focus on textarea
+                const val = editable.value;
+                // Replace the last generated result with the alternative
+                const newText = val.substring(0, val.lastIndexOf(calc.result)) + alt;
+                editable.value = newText;
+                onChange!(editable.value);
+                closeSuggestionPopup();
+              };
+              
+              suggestionPopup.appendChild(btn);
+            });
+
+            excalidrawContainer
+              ?.querySelector(".excalidraw-textEditorContainer")!
+              .appendChild(suggestionPopup);
+          }
+        }
+      } else {
+        closeSuggestionPopup();
+      }
+      // --- END CALCULATOR LOGIC ---
+
       onChange(editable.value);
-    };
-  }
+    };  }
 
   editable.onkeydown = (event) => {
     if (!event.shiftKey && actionZoomIn.keyTest(event)) {

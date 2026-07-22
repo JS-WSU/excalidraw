@@ -66,6 +66,8 @@ import type { isOverScrollBars } from "./scene/scrollbars";
 import type React from "react";
 import type { JSX } from "react";
 
+export type CalculatorSystem = "metric" | "imperial" | "auto";
+
 export type { App };
 
 export type SocketId = string & { _brand: "SocketId" };
@@ -312,6 +314,7 @@ export type ScrollConstraints = {
 };
 
 export interface AppState {
+  calculatorSystem: CalculatorSystem;
   contextMenu: {
     items: ContextMenuItems;
     top: number;

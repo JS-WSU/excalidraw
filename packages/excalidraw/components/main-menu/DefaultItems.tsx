@@ -63,6 +63,45 @@ import {
 
 import "./DefaultItems.scss";
 
+export const CalculatorSystemToggle = () => {
+  const { t } = useI18n();
+  const appState = useUIAppState();
+  const setAppState = useExcalidrawSetAppState();
+
+  return (
+    <DropdownMenuItemContentRadio<CalculatorSystem>
+      name="calculatorSystem"
+      icon={emptyIcon}
+      value={appState.calculatorSystem || "auto"}
+      onChange={(value) => {
+        setAppState({
+          calculatorSystem: value,
+        });
+      }}
+      choices={[
+        {
+          value: "auto",
+          label: "Auto-detect", // Ideally mapped to t("labels.calcAuto")
+          ariaLabel: "Auto-detect system",
+        },
+        {
+          value: "metric",
+          label: "Metric", // Ideally mapped to t("labels.calcMetric")
+          ariaLabel: "Metric system",
+        },
+        {
+          value: "imperial",
+          label: "Imperial", // Ideally mapped to t("labels.calcImperial")
+          ariaLabel: "Imperial system",
+        },
+      ]}
+    >
+      Calculator System
+    </DropdownMenuItemContentRadio>
+  );
+};
+CalculatorSystemToggle.displayName = "CalculatorSystemToggle";
+
 export const LoadScene = () => {
   const { t } = useI18n();
   const actionManager = useExcalidrawActionManager();
