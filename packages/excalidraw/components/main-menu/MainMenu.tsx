@@ -58,6 +58,10 @@ const MainMenu = Object.assign(
               align="start"
             >
               {children}
+              
+              {/* Inserted CalculatorSystemToggle here */}
+              <CalculatorSystemToggle />
+
               {editorInterface.formFactor === "phone" &&
                 appState.collaborators.size > 0 && (
                   <fieldset className="UserList-Wrapper">
