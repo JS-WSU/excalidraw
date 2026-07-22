@@ -1,9 +1,11 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import clsx from "clsx";
 
 import { IconButton } from "./IconButton";
 import { laserPointerToolIcon } from "./icons";
 import { LaserModeToggle } from "./LaserModeToggle";
+import { useExcalidrawContainer } from "./App";
 import type { UIAppState } from "../types";
 
 type LaserPointerButtonProps = {
@@ -16,6 +18,8 @@ type LaserPointerButtonProps = {
 };
 
 export const LaserPointerButton = (props: LaserPointerButtonProps) => {
+  const { container } = useExcalidrawContainer();
+
   return (
     <>
       <IconButton
@@ -34,24 +38,28 @@ export const LaserPointerButton = (props: LaserPointerButtonProps) => {
         }}
       />
 
-      {/* Surface the toggle globally when active, bypassing hidden overflow issues */}
-      {props.checked && (
-        <div 
-          style={{
-            position: "fixed",
-            top: "var(--sat, 1rem)", // Accommodates safe area
-            left: "50%",
-            transform: "translateX(-50%)",
-            marginTop: "60px", // Clears the top Excalidraw UI toolbar
-            zIndex: 999999, // Ensures it renders above all canvas elements
-          }}
-        >
-          <LaserModeToggle 
-            appState={props.appState} 
-            setAppState={props.setAppState} 
-          />
-        </div>
-      )}
+      {/* Teleport the toggle to the root container to bypass toolbar hidden overflows */}
+      {props.checked && container &&
+        createPortal(
+          <div
+            style={{
+              position: "absolute",
+              top: "70px", // Pushed below the top toolbar
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 9999999, // Float above all canvas elements
+              pointerEvents: "none", // Prevent this wrapper wrapper from blocking canvas clicks
+            }}
+          >
+            <div style={{ pointerEvents: "auto" }}>
+              <LaserModeToggle 
+                appState={props.appState} 
+                setAppState={props.setAppState} 
+              />
+            </div>
+          </div>,
+          container
+        )}
     </>
   );
 };

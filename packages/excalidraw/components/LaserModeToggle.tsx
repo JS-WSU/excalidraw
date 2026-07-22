@@ -35,7 +35,6 @@ export const LaserModeToggle = ({
         border: "1px solid var(--color-gray-20, #e9ecef)",
         fontSize: "0.875rem",
         color: "var(--text-primary-color, #333333)",
-        pointerEvents: "auto",
       }}
     >
       <label 
