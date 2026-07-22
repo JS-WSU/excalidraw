@@ -4,7 +4,7 @@ import { Excalidraw } from "../index";
 
 describe("Laser Pointer Tool", () => {
   it("should select the laser pointer tool and toggle persistence", async () => {
-    // 1. Render Excalidraw with all required activeTool properties
+    // 1. Render Excalidraw with the laser pointer initialized as the active tool
     render(
       <Excalidraw 
         initialData={{ 
@@ -21,8 +21,7 @@ describe("Laser Pointer Tool", () => {
       />
     );
 
-    // 2. Because the tool is active, the popup will automatically mount.
-    // Wait for the asynchronous render of the DOM elements.
+    // 2. Wait for the asynchronously rendered canvas overlay to mount
     const persistenceToggle = await screen.findByLabelText("Toggle Persistent Laser Mode");
     expect(persistenceToggle).toBeInTheDocument();
     

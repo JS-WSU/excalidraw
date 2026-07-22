@@ -28,15 +28,14 @@ export const LaserModeToggle = ({
       style={{
         display: "flex",
         alignItems: "center",
-        padding: "0.5rem",
+        padding: "0.5rem 1rem",
         backgroundColor: "var(--island-bg-color, #ffffff)",
         borderRadius: "var(--border-radius-lg, 8px)",
         boxShadow: "var(--shadow-island, 0 1px 4px rgba(0,0,0,0.15))",
+        border: "1px solid var(--color-gray-20, #e9ecef)",
         fontSize: "0.875rem",
         color: "var(--text-primary-color, #333333)",
-        marginTop: "0.5rem",
         pointerEvents: "auto",
-        zIndex: 999999,
       }}
     >
       <label 
@@ -44,7 +43,8 @@ export const LaserModeToggle = ({
           display: "flex", 
           alignItems: "center", 
           cursor: "pointer",
-          gap: "0.5rem" 
+          gap: "0.5rem",
+          margin: 0
         }}
       >
         <input
@@ -59,7 +59,7 @@ export const LaserModeToggle = ({
           }}
           aria-label="Toggle Persistent Laser Mode"
         />
-        <span style={{ fontWeight: 500 }}>
+        <span style={{ fontWeight: 500, whiteSpace: "nowrap" }}>
           Persistent Laser Trail
         </span>
       </label>
